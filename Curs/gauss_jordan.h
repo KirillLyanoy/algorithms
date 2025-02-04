@@ -76,6 +76,17 @@ void delete_array(T* array) {
         delete[] array;
 }
 
+template <typename T>
+void add_element_to_array(T* &array, int size) {
+    if (array == nullptr) return;
+    T* new_arr = new T[size + 1];
+    for (int i = 0; i < size; i++) {
+        new_arr[i] = array[i];
+    }
+    delete[] array;
+    array = new_arr;
+}
+
 //удаление строки из матрицы
 void remove_string(double*** old_matrix, int string_to_del, int numbers_of_variables, int& numbers_of_equations) {
     double** new_matrix = new double* [numbers_of_equations - 1];

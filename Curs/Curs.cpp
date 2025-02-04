@@ -83,8 +83,13 @@ bool check_simple_table(double** simplex_table, minmax minmax) {
 	}
 }
 
+void calculation_of_resolving_element(double** simplex_table, int &x, int &y, minmax minmax) {
+
+
+}
+
 void simplex_method(double** matrix, double* z, bool* basis, minmax minmax) {
-	
+
 	//выделение памяти под симплексную таблицу
 	double** simplex_table = new double*[equations + 1];
 	for (int i = 0; i < equations + 1; i++) {
@@ -108,9 +113,20 @@ void simplex_method(double** matrix, double* z, bool* basis, minmax minmax) {
 	//вывод симплексной таблицы
 	print_simplex_table(simplex_table, basis);
 
-	if (!check_simple_table(simplex_table, minmax)) std::cout << "Решение не оптимально" << std::endl;
+	if (!check_simple_table(simplex_table, minmax)) {
+
+		std::cout << "Решение не оптимально. Расчет новой таблицы" << std::endl;
+
+		//строка разрешающего элемента
+		int x;
+		//столбец разрешающего элемента
+		int y;
+
+		calculation_of_resolving_element(simplex_table, x, y, minmax);
 
 
+
+	}
 
 
 	else {
