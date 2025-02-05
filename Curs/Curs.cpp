@@ -288,8 +288,10 @@ void define_basic_variables(double** matrix, bool* basis) {
 
 	for (int j = 0; j < variables; j++) {
 		
-		if (col_basis_check(matrix, equations, j, basis_row_with_one))
+		if (col_basis_check(matrix, equations, j, basis_row_with_one)) {
 			basis[j] = true;
+			basis_row_with_one++;
+		}
 		else
 			basis[j] = false;
 	}
@@ -368,7 +370,7 @@ int main()
 
 				matrix = new double* [equations];
 				for (int i = 0; i < equations; i++) {
-					matrix[i] = new double[variables];
+					matrix[i] = new double[variables + 1];
 				}
 
 
@@ -386,34 +388,34 @@ int main()
 
 				minmax minmax;
 
-				std::cout << "Найти минимум или максимум функции?" << std::endl << "1. Минимум" << std::endl << "2. Максимум";
+				std::cout << "Найти минимум или максимум функции?" << std::endl << "1. Минимум" << std::endl << "2. Максимум" << std::endl;
 
 
 				std::cin >> c;
 				
-				while (true) {
-					switch (c) {
+				switch (c) {
 					case ('1'):
 						minmax = min;
 						break;
 					case ('2'):
 						minmax = max;
 						break;
-					}					
-				}
+					default: 
+						minmax = min;
+						break;
+				}					
+				
 
 				basis = new bool[variables];
 
 				z = new double[variables];
-				copy_array(F, z, variables);
-
-				
-
-				define_basic_variables(matrix, basis);
+				copy_array(F, z, variables);								
 
 				std::cout << "Опорное решение, найденное методом Жордана - Гаусса:" << std::endl;
 				gauss_jordan_elementation(matrix, variables, equations);
 				print_matrix(matrix, variables, equations);
+
+				define_basic_variables(matrix, basis);
 
 				//выразить базисные переменные функции через свободные члены
 				check_the_base_variable(matrix, z, basis);
