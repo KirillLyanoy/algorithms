@@ -23,6 +23,21 @@ bool row_echelon_form_check(double** matrix, int numbers_of_variables, int numbe
     return true;
 }
 
+bool col_basis_check(double** matrix, int numbers_of_equations, int column, int basis_row_with_one) {
+   
+    for (int i = 0; i < numbers_of_equations; i++) {
+        
+        if (i == basis_row_with_one) {
+            if (matrix[i][column] != 1) return false;
+        }
+        else {
+            if (matrix[i][column] != 0) return false;
+        }
+    }
+  
+    return true;
+}
+
 //проверка принадлежности столбца к преобразованной матрице
 bool check_col(double** matrix, int numbers_of_equations, int checked_col, int resolving_row) {
     for (int i = 0; i < numbers_of_equations; i++) {

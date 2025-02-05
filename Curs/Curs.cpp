@@ -68,6 +68,7 @@ void print_simplex_table(double** simplex_table, bool* basis) {
 	}
 }
 
+//проверка на оптимальность решения
 bool check_simple_table(double** simplex_table, minmax minmax) {
 	if (minmax == min) {
 		for (int i = equations, j = 1; j < variables + 1; j++) {
@@ -281,6 +282,19 @@ void result_equation(double* z, double* F) {
 	std::cout << answer << std::endl << std::endl;
 }
 
+void define_basic_variables(double** matrix, bool* basis) {
+
+	int basis_row_with_one = 0;
+
+	for (int j = 0; j < variables; j++) {
+		
+		if (col_basis_check(matrix, equations, j, basis_row_with_one))
+			basis[j] = true;
+		else
+			basis[j] = false;
+	}
+}
+
 int main()
 {
 	setlocale(LC_ALL, "Rus");
@@ -329,14 +343,92 @@ int main()
 
 				result_equation(z, F);
 
-
-
 				delete_array(matrix, equations);
 				delete_array(z);
 				delete_array(F);
 				delete_array(basis);
 				break;
 			case('2'):
+
+				while (true) {
+					std::cout << "Введите количество уравнений: ";
+					std::cin >> equations;
+
+					if (equations < 2 || equations > 100) std::cout << std::endl << "Неправильное количество уравнений. Повторите ввод: ";
+					else break;
+				}
+
+				while (true) {
+					std::cout << "Введите количество переменных: ";
+					std::cin >> variables;
+
+					if (variables < 2 || variables > 100) std::cout << std::endl << "Неправильное количество переменных. Повторите ввод: ";
+					else break;
+				}
+
+				matrix = new double* [equations];
+				for (int i = 0; i < equations; i++) {
+					matrix[i] = new double[variables];
+				}
+
+
+				fill_array(matrix, variables, equations);
+
+				std::cout << std::endl << "Ввод ффункции." << std::endl;
+				
+				F = new double[variables];
+
+				for (int i = 0; i < variables; i++) {
+
+					std::cout << "Коэффициент при х" << i + 1 << " : ";
+					std::cin >> F[i];
+				}
+
+				minmax minmax;
+
+				std::cout << "Найти минимум или максимум функции?" << std::endl << "1. Минимум" << std::endl << "2. Максимум";
+
+
+				std::cin >> c;
+				
+				while (true) {
+					switch (c) {
+					case ('1'):
+						minmax = min;
+						break;
+					case ('2'):
+						minmax = max;
+						break;
+					}					
+				}
+
+				basis = new bool[variables];
+
+				z = new double[variables];
+				copy_array(F, z, variables);
+
+				
+
+				define_basic_variables(matrix, basis);
+
+				std::cout << "Опорное решение, найденное методом Жордана - Гаусса:" << std::endl;
+				gauss_jordan_elementation(matrix, variables, equations);
+				print_matrix(matrix, variables, equations);
+
+				//выразить базисные переменные функции через свободные члены
+				check_the_base_variable(matrix, z, basis);
+
+				//решение симплекс методом
+				simplex_method(matrix, z, basis, min);
+
+				result_equation(z, F);
+
+				delete_array(matrix, equations);
+				delete_array(z);
+				delete_array(F);
+				delete_array(basis);
+				break;
+
 				break;
 			case('3'):
 				return 0;
