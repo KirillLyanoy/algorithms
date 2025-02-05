@@ -1,9 +1,10 @@
 #pragma once
 #include <iostream>
 #include <cmath>
+#include <iomanip>
 
 //Точность
-const int e = 1000;
+const int e = 100000;
 
 //Проверка на ступенчатый вид
 bool row_echelon_form_check(double** matrix, int numbers_of_variables, int numbers_of_equations) {
@@ -35,7 +36,7 @@ bool check_col(double** matrix, int numbers_of_equations, int checked_col, int r
 }
 
 //заполнеине массива
-void fill_matrix(double** matrix, int numbers_of_variables, int numbers_of_equations) {
+void fill_array(double** matrix, int numbers_of_variables, int numbers_of_equations) {
     for (int i = 0; i < numbers_of_equations; i++) {
         for (int j = 0; j < numbers_of_variables + 1; j++) {
             std::cout << "Введите " << j + 1 << " константу " << i + 1 << " строки: ";
@@ -47,15 +48,16 @@ void fill_matrix(double** matrix, int numbers_of_variables, int numbers_of_equat
 
 //печать массива
 void print_matrix(double** matrix, int numbers_of_variables, int numbers_of_equations) {
-    std::cout << std::endl << "----------------------------------------------------" << std::endl;
+    std::cout << std::endl << "-------------------------------------------------------------" << std::endl;
     for (int i = 0; i < numbers_of_equations; i++) {
         for (int j = 0; j < numbers_of_variables + 1; j++)
-            std::cout << matrix[i][j] << "\t";
-        std::cout << std::endl;
+            std::cout << std::setw(10) << matrix[i][j];
+        if (i + 1 < numbers_of_equations) std::cout << std::endl;
     }
 }
 
-void copy_matrix(double** fromMatrix, double** toMatrix, int numbers_of_variables, int numbers_of_equations) {
+//копирование массива
+void copy_array(double** fromMatrix, double** toMatrix, int numbers_of_variables, int numbers_of_equations) {
     for (int i = 0; i < numbers_of_equations; i++) {
         for (int j = 0; j < numbers_of_variables + 1; j++) {
             toMatrix[i][j] = fromMatrix[i][j];
@@ -63,19 +65,28 @@ void copy_matrix(double** fromMatrix, double** toMatrix, int numbers_of_variable
     }
 }
 
+//копирование массива
+void copy_array(double* fromMatrix, double* toMatrix, int size) {
+    for (int i = 0; i < size; i++) {
+        toMatrix[i] = fromMatrix[i];
+    }
+}
+
 //удаление массива
-void delete_matrix(double** matrix, int numbers_of_equations) {
+void delete_array(double** matrix, int numbers_of_equations) {
     for (int i = 0; i < numbers_of_equations; i++)
         delete[] matrix[i];
     delete[] matrix;
 }
 
+//удаление массива
 template <typename T>
 void delete_array(T* array) {
     if (array != nullptr) 
         delete[] array;
 }
 
+//добавление элемента в массив
 template <typename T>
 void add_element_to_array(T* &array, int size) {
     if (array == nullptr) return;
@@ -85,6 +96,34 @@ void add_element_to_array(T* &array, int size) {
     }
     delete[] array;
     array = new_arr;
+}
+
+//индекс максимального элемента массива
+int index_of_max_element(double* array, int size, int start_index) {
+
+    if (array == nullptr || size == 0 || start_index < 0 || start_index >= size) return -1;
+
+    int index = start_index;
+
+    for (int i = 0; i < size; i++) {
+        if (array[i] > array[index]) index = i;
+    }
+
+    return index;
+}
+
+//индекс минимального элемента массива
+int index_of_min_element(double* array, int size, int start_index) {
+
+    if (array == nullptr || size == 0 || start_index < 0 || start_index >= size) return -1;
+
+    int index = start_index;
+
+    for (int i = 0; i < size; i++) {
+        if (array[i] < array[index]) index = i;
+    }
+
+    return index;
 }
 
 //удаление строки из матрицы
@@ -106,7 +145,7 @@ void remove_string(double*** old_matrix, int string_to_del, int numbers_of_varia
         else old_matrix_index++;
     }
 
-    delete_matrix(*old_matrix, numbers_of_equations);
+    delete_array(*old_matrix, numbers_of_equations);
     *old_matrix = new_matrix;
     numbers_of_equations--;
 }
@@ -193,7 +232,7 @@ void gauss_jordan_elementation(double** &matrix, int& numbers_of_variables, int&
 
         iteration++;
 
-        delete_matrix(matrix, current_numbers_of_equations);
+        delete_array(matrix, current_numbers_of_equations);
         //замена временной матрицы на основную
         matrix = temp_matrix;
         current_numbers_of_equations = numbers_of_equations;

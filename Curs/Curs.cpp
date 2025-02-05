@@ -41,7 +41,7 @@ void check_the_base_variable(double** matrix, double* z, bool* basis) {
 //вывод симплексной таблицы
 void print_simplex_table(double** simplex_table, bool* basis) {
 
-	std::cout << std::endl << "БП |" << std::setw(10) << "1" << std::setw(10) << "x1" << std::setw(10) << "x2" << std::setw(10) <<
+	std::cout << std::endl << std::endl << "БП |" << std::setw(10) << "1" << std::setw(10) << "x1" << std::setw(10) << "x2" << std::setw(10) <<
 		"x3" << std::setw(10) << "x4" << std::setw(10) << "x5" << std::endl;
 	for (int i = 0; i < 65; i++) std::cout << "-";
 	std::cout << std::endl;
@@ -70,25 +70,124 @@ void print_simplex_table(double** simplex_table, bool* basis) {
 
 bool check_simple_table(double** simplex_table, minmax minmax) {
 	if (minmax == min) {
-		for (int i = equations, j = 1; j < variables; j++) {
+		for (int i = equations, j = 1; j < variables + 1; j++) {
 			if (simplex_table[i][j] > 0) return false;
 		}
 		return true;
 	}
 	else {
-		for (int i = equations, j = 1; j < variables; j++) {
+		for (int i = equations, j = 1; j < variables + 1; j++) {
 			if (simplex_table[i][j] < 0) return false;
 		}
 		return true;
 	}
 }
 
-void calculation_of_resolving_element(double** simplex_table, int &x, int &y, minmax minmax) {
+//определение разрешающего элемента
+void calculation_of_resolving_element(double** simplex_table, int &resolving_x, int &resolving_y, minmax minmax) {
+	
+	int CO_size = 0;
+	double* CO = new double[CO_size];
+	//индексный массив СО
+	int* CO_index_arr = new int[CO_size];
 
+	if (minmax == min) 
+		resolving_y = index_of_max_element(simplex_table[equations], variables + 1, 1);
+	else 
+		resolving_y = index_of_min_element(simplex_table[equations], variables + 1, 1);
 
+	for (int i = 0; i < equations; i++) {
+		if (simplex_table[i][resolving_y] > 0) {
+
+			add_element_to_array(CO, CO_size);
+			add_element_to_array(CO_index_arr, CO_size);
+
+			CO[CO_size] = simplex_table[i][0] / simplex_table[i][resolving_y];
+			CO_index_arr[CO_size] = i;
+
+			CO_size++;
+		}
+	}		
+
+	if (minmax == min)
+		resolving_x = CO_index_arr[index_of_min_element(CO, CO_size, 0)];
+	else 
+		resolving_x = CO_index_arr[index_of_min_element(CO, CO_size, 0)];
+
+	delete[] CO;
+	delete[] CO_index_arr;
 }
 
+//перерасчет симплексной таблицы
+void simplex_table_rebuilding(double**& simplex_table, int resolving_x, int resolving_y, bool* basis) {
+
+	//временная новая симплексная таблица
+	double** temp_table = new double* [variables + 1];
+	for (int i = 0; i < equations + 1; i++)
+		temp_table[i] = new double[variables + 1];
+
+
+	int old_basis_index = 0;
+	int basis_count = 0;
+
+	//замена базисной переменной
+	for (int i = 0; i < variables; i++) {
+		if (basis[i]) {
+			if (basis_count == resolving_x)
+				break;
+			else basis_count++;
+		}		
+		old_basis_index++;
+	}
+
+	basis[old_basis_index] = false;
+	basis[resolving_y - 1] = true;
+
+	//Элементы разрешающей строки делим на разрешающий элемент
+	for (int i = resolving_x, j = 0; j < variables + 1; j++) {
+		temp_table[i][j] = simplex_table[i][j] / simplex_table[resolving_x][resolving_y];
+	}
+
+	//Остальные элементы разрешающего столбца заполняем нулями
+	for (int i = 0; i < equations + 1; i++) {
+		if (i != resolving_x) temp_table[i][resolving_y] = 0;
+	}
+
+	//Столбцы, соответствующие остальным базисным переменным не изменяются
+	for (int i = 0; i < equations + 1; i++) {
+		for (int j = 1; j < variables + 1; j++) {
+			if (basis[j - 1] && j != resolving_y)
+				temp_table[i][j] = simplex_table[i][j];
+		}
+	}
+
+	//В прежднем базисном столбце меняем элементы на элементы нового базисного столбца, деленного на разрешающий элемент с противоположным знаком
+	for (int i = 0; i < equations + 1; i++) {
+		if (i != resolving_x) {
+			temp_table[i][old_basis_index + 1] = 0 - (simplex_table[i][resolving_y] / simplex_table[resolving_x][resolving_y]);
+		}		
+	}
+
+	//Остальные элементы пересчитываем по правилу прямоугольников
+	for (int i = 0; i < equations + 1; i++) {
+		for (int j = 0; j < variables + 1; j++) {
+			if (i != resolving_x && j != resolving_y && j != old_basis_index + 1) {			
+				if (j > 0 && basis[j - 1]) continue;
+				temp_table[i][j] = simplex_table[i][j] - (simplex_table[i][resolving_y] * simplex_table[resolving_x][j] / simplex_table[resolving_x][resolving_y]);			
+			}
+
+		}
+	}
+
+	delete_array(simplex_table, equations + 1);
+	simplex_table = temp_table;
+}
+
+//симплекс метод
 void simplex_method(double** matrix, double* z, bool* basis, minmax minmax) {
+
+	int iteration = 0;
+	bool solution_is_optimal = false;
 
 	//выделение памяти под симплексную таблицу
 	double** simplex_table = new double*[equations + 1];
@@ -107,33 +206,79 @@ void simplex_method(double** matrix, double* z, bool* basis, minmax minmax) {
 	}
 	simplex_table[equations][0] = 0;
 	for (int i = equations, j = 1; j < variables + 1; j++) {
-		simplex_table[i][j] = z[j - 1];
+		simplex_table[i][j] = 0 - z[j - 1];
 	}
 	
-	//вывод симплексной таблицы
-	print_simplex_table(simplex_table, basis);
+	while (!solution_is_optimal && iteration < 100) {
 
-	if (!check_simple_table(simplex_table, minmax)) {
+		iteration++;
 
-		std::cout << "Решение не оптимально. Расчет новой таблицы" << std::endl;
+		//вывод симплексной таблицы
+		print_simplex_table(simplex_table, basis);
 
-		//строка разрешающего элемента
-		int x;
-		//столбец разрешающего элемента
-		int y;
+		solution_is_optimal = check_simple_table(simplex_table, minmax);
 
-		calculation_of_resolving_element(simplex_table, x, y, minmax);
+		if (solution_is_optimal) {
+			std::cout << std::endl << "Решение оптмально" << std::endl;
+			break;
+		}		
+		else {
+			std::cout << std::endl << "Решение не оптимально. Расчет новой таблицы" << std::endl;
 
+			//строка разрешающего элемента
+			int resolving_x;
+			//столбец разрешающего элемента
+			int resolving_y;
 
+			//определение разрешающего элемента
+			calculation_of_resolving_element(simplex_table, resolving_x, resolving_y, minmax);
 
+			simplex_table_rebuilding(simplex_table, resolving_x, resolving_y, basis);
+		}
 	}
 
-
+	//вывод результата
+	if (!solution_is_optimal) 
+		std::cout << "Решений нет" << std::endl;
 	else {
 
+		for (int j = 1; j < variables + 1; j++) {
+			if (basis[j - 1]) {
+				for (int k = 0; k < equations; k++) {
+					if (simplex_table[k][j] == 1)
+						z[j - 1] = simplex_table[k][0];
+				}
+			}
+			else z[j - 1] = 0;
+		}
+		
+		std::cout << "(X" << iteration << ") = ( ";
+		for (int i = 0; i < variables; i++) {
+			std::cout << z[i] << "; ";
+		}
+		std::cout << ")" << std::endl;
 	}
 
-	delete_matrix(simplex_table, equations + 1);
+
+	delete_array(simplex_table, equations + 1);
+}
+
+//вывод результирующей функции с ответом
+void result_equation(double* z, double* F) {
+	double answer = 0;
+
+	std::cout << "F(x) = ";
+	for (int i = 0; i < variables; i++) {
+		std::cout << z[i] << " * " << F[i];
+		if (i + 1 < variables) std::cout << " + ";
+		else std::cout << " = ";
+	}
+
+	for (int i = 0; i < variables; i++) {
+		answer += z[i] * F[i];
+	}
+
+	std::cout << answer << std::endl << std::endl;
 }
 
 int main()
@@ -143,6 +288,7 @@ int main()
 
 	double** matrix;
 	double* z;
+	double* F;
 	bool* basis;
 
 	while (true) {
@@ -160,7 +306,10 @@ int main()
 
 				matrix = new double* [equations];
 
-				z = new double[variables] { 7, 1, 0, 0, 0 };
+				F = new double[variables] { 7, 1, 0, 0, 0 };
+				z = new double[variables];
+				copy_array(F, z, variables);
+
 				basis = new bool[variables] { true, true, true, false, false };
 
 				matrix[0] = new double[variables + 1] { 4, 1, -1, 0, 0, 11 };
@@ -178,8 +327,13 @@ int main()
 				//решение симплекс методом
 				simplex_method(matrix, z, basis, min);
 
-				delete_matrix(matrix, equations);
+				result_equation(z, F);
+
+
+
+				delete_array(matrix, equations);
 				delete_array(z);
+				delete_array(F);
 				delete_array(basis);
 				break;
 			case('2'):
