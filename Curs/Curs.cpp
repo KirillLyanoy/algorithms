@@ -97,6 +97,7 @@ void calculation_of_resolving_element(double** simplex_table, int &resolving_x, 
 	else 
 		resolving_y = index_of_min_element(simplex_table[equations], variables + 1, 1);
 
+
 	for (int i = 0; i < equations; i++) {
 		if (simplex_table[i][resolving_y] > 0) {
 
@@ -128,6 +129,24 @@ void simplex_table_rebuilding(double**& simplex_table, int resolving_x, int reso
 		temp_table[i] = new double[variables + 1];
 
 
+	//int old_basis_index;
+	//int* basis_index = new int[equations];
+	//for (int i = 0, k = 0; i < variables; i++) {
+	//	if (basis[i]) {
+	//		basis_index[k] = i;
+	//		k++;
+	//	}
+	//}
+	//for (int i = 0; i < variables; i++) {
+	//	if (basis_index[i] == resolving_x) {
+	//		old_basis_index = basis_index[i];
+	//		basis[basis_index[i]] = false;
+	//	}
+	//}
+	//basis[resolving_y - 1] = true;
+
+	//delete[] basis_index;
+
 	int old_basis_index = 0;
 	int basis_count = 0;
 
@@ -137,7 +156,7 @@ void simplex_table_rebuilding(double**& simplex_table, int resolving_x, int reso
 			if (basis_count == resolving_x)
 				break;
 			else basis_count++;
-		}		
+		}
 		old_basis_index++;
 	}
 
@@ -409,11 +428,17 @@ int main()
 				basis = new bool[variables];
 
 				z = new double[variables];
-				copy_array(F, z, variables);								
+				copy_array(F, z, variables);					
 
-				std::cout << "Опорное решение, найденное методом Жордана - Гаусса:" << std::endl;
-				gauss_jordan_elementation(matrix, variables, equations);
-				print_matrix(matrix, variables, equations);
+				check_negative_coefficients(matrix, variables, equations);
+
+				if (!row_echelon_form_check(matrix, variables, equations)) {
+					std::cout << "Опорное решение, найденное методом Жордана - Гаусса:" << std::endl;
+					gauss_jordan_elementation(matrix, variables, equations);
+					print_matrix(matrix, variables, equations);					
+				}
+
+				
 
 				define_basic_variables(matrix, basis);
 
@@ -421,7 +446,7 @@ int main()
 				check_the_base_variable(matrix, z, basis);
 
 				//решение симплекс методом
-				simplex_method(matrix, z, basis, min);
+				simplex_method(matrix, z, basis, minmax);
 
 				result_equation(z, F);
 

@@ -7,8 +7,8 @@
 const int e = 100000;
 
 //Проверка на ступенчатый вид
-bool row_echelon_form_check(double** matrix, int numbers_of_variables, int numbers_of_equations) {
-    if (numbers_of_equations != numbers_of_variables) return false;
+bool row_square_echelon_form_check(double** matrix, int numbers_of_variables, int numbers_of_equations) {
+    //if (numbers_of_equations != numbers_of_variables) return false;
 
     for (int i = 0; i < numbers_of_equations; i++) {
         for (int j = 0; j < numbers_of_variables; j++) {
@@ -23,10 +23,11 @@ bool row_echelon_form_check(double** matrix, int numbers_of_variables, int numbe
     return true;
 }
 
+//проверка на базисный столбец
 bool col_basis_check(double** matrix, int numbers_of_equations, int column, int basis_row_with_one) {
-   
+
     for (int i = 0; i < numbers_of_equations; i++) {
-        
+
         if (i == basis_row_with_one) {
             if (matrix[i][column] != 1) return false;
         }
@@ -34,8 +35,39 @@ bool col_basis_check(double** matrix, int numbers_of_equations, int column, int 
             if (matrix[i][column] != 0) return false;
         }
     }
-  
+
     return true;
+}
+
+//Проверка на ступенчатый вид
+bool row_echelon_form_check(double** matrix, int numbers_of_variables, int numbers_of_equations) {
+
+    int k = numbers_of_equations;
+    int start_variable = 0;
+
+    for (int i = 0; i < numbers_of_equations; i++) {
+        for (int j = start_variable; j < numbers_of_variables; j++) {
+
+            if (matrix[i][j] == 1 && col_basis_check(matrix, numbers_of_equations, j, i)) {
+                k--;
+                start_variable = j + 1;
+                break;
+            }
+        }
+    }
+    if (k == 0) return true;
+    else return false;
+}
+
+//проверка на отрицательный свободный коэффициент
+void check_negative_coefficients(double** matrix, int numbers_of_variables, int numbers_of_equations) {
+    for (int i = 0; i < numbers_of_equations; i++) {
+        if (matrix[i][numbers_of_variables] < 0) {
+            for (int j = 0; j < numbers_of_variables + 1; j++) {
+                matrix[i][j] = 0 - matrix[i][j];
+            }
+        }
+    }
 }
 
 //проверка принадлежности столбца к преобразованной матрице
